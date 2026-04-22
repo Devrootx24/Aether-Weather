@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aether Weather</title>
+
+    <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap"
+        rel="stylesheet" />
+
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <!-- Animated background canvas -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Noise overlay for texture -->
+    <div class="noise-overlay"></div>
+
+    <!-- ========== TOP BAR ========== -->
+    <header class="topbar">
+        <div class="logo">
+            <span class="logo-icon">◈</span>
+            <span class="logo-text">Aether Weather</span>
+        </div>
+
+        <div class="search-wrapper">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+                <input type="text" id="search-input" placeholder="Search city…" autocomplete="off"
+                    aria-label="Search for a city" />
+                <button id="search-btn" aria-label="Search">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                        <polyline points="12 5 19 12 12 19" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Recent searches dropdown -->
+            <div class="recent-dropdown" id="recent-dropdown" aria-live="polite"></div>
+        </div>
+
+        <div class="controls">
+            <!-- Unit toggle -->
+            <div class="unit-toggle" id="unit-toggle" role="button" aria-label="Toggle temperature unit" tabindex="0">
+                <span class="unit-opt" data-unit="metric">°C</span>
+                <span class="toggle-knob"></span>
+                <span class="unit-opt" data-unit="imperial">°F</span>
+            </div>
+
+            <!-- Theme toggle -->
+            <button class="theme-btn" id="theme-btn" aria-label="Toggle light/dark mode">
+                <span class="theme-icon sun">☀️</span>
+                <span class="theme-icon moon">🌙</span>
+            </button>
+
+            <!-- Geolocation -->
+            <button class="geo-btn" id="geo-btn" aria-label="Use my location">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="3" />
+                    <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                    <circle cx="12" cy="12" r="8" stroke-dasharray="4 2" />
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- ========== MAIN CONTENT ========== -->
+    <main class="main-content">
+
+        <!-- Loading spinner -->
+        <div class="loader" id="loader" aria-label="Loading weather data" role="status">
+            <div class="loader-ring"></div>
+            <p>Fetching weather…</p>
+        </div>
+
+        <!-- Error state -->
+        <div class="error-state" id="error-state" hidden>
+            <div class="error-icon">⚡</div>
+            <h2 id="error-title">Something went wrong</h2>
+            <p id="error-msg">Unable to fetch weather data.</p>
+            <button class="retry-btn" id="retry-btn">Try again</button>
+        </div>
+
+        <!-- Empty / welcome state -->
+        <div class="welcome-state" id="welcome-state">
+            <div class="welcome-orb"></div>
+            <h1>Discover the weather<br /><em>anywhere on Earth.</em></h1>
+            <p>Search for a city above or allow location access to get started.</p>
+        </div>
+
+        <!-- ===== Weather Dashboard ===== -->
+        <div class="dashboard" id="dashboard" hidden>
+
+            <!-- LEFT: Current weather hero -->
+            <section class="current-card" id="current-card">
+
+                <div class="current-top">
+                    <div class="location-info">
+                        <h2 class="city-name" id="city-name">–</h2>
+                        <p class="country-name" id="country-name">–</p>
+                        <p class="local-time" id="local-time">–</p>
+                    </div>
+                    <div class="weather-icon-wrap" id="weather-icon-wrap">
+                        <div class="icon-anim" id="main-icon"></div>
+                    </div>
+                </div>
+
+                <div class="temp-display">
+                    <span class="temp-value" id="temp-value">–</span>
+                    <span class="temp-unit" id="temp-unit">°C</span>
+                </div>
+                <p class="condition-text" id="condition-text">–</p>
+                <p class="feels-like" id="feels-like">Feels like –</p>
+
+                <div class="stat-grid">
+                    <div class="stat-item">
+                        <span class="stat-icon">💧</span>
+                        <div>
+                            <p class="stat-label">Humidity</p>
+                            <p class="stat-value" id="humidity">–</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🌬️</span>
+                        <div>
+                            <p class="stat-label">Wind</p>
+                            <p class="stat-value" id="wind-speed">–</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🔵</span>
+                        <div>
+                            <p class="stat-label">Pressure</p>
+                            <p class="stat-value" id="pressure">–</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">👁️</span>
+                        <div>
+                            <p class="stat-label">Visibility</p>
+                            <p class="stat-value" id="visibility">–</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🌅</span>
+                        <div>
+                            <p class="stat-label">Sunrise</p>
+                            <p class="stat-value" id="sunrise">–</p>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">🌇</span>
+                        <div>
+                            <p class="stat-label">Sunset</p>
+                            <p class="stat-value" id="sunset">–</p>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- RIGHT: Forecast + extras -->
+            <aside class="side-panel">
+
+                <!-- Air quality / UV index row -->
+                <div class="highlights-row">
+                    <div class="highlight-card" id="uv-card">
+                        <p class="hl-label">UV Index</p>
+                        <p class="hl-value" id="uv-value">–</p>
+                        <div class="uv-bar">
+                            <div class="uv-fill" id="uv-fill"></div>
+                        </div>
+                    </div>
+                    <div class="highlight-card">
+                        <p class="hl-label">Cloud Cover</p>
+                        <p class="hl-value" id="cloud-cover">–</p>
+                        <div class="cloud-bar">
+                            <div class="cloud-fill" id="cloud-fill"></div>
+                        </div>
+                    </div>
+                    <div class="highlight-card">
+                        <p class="hl-label">Dew Point</p>
+                        <p class="hl-value" id="dew-point">–</p>
+                    </div>
+                </div>
+
+                <!-- 5-day forecast -->
+                <div class="forecast-section">
+                    <h3 class="section-title">5-Day Forecast</h3>
+                    <div class="forecast-grid" id="forecast-grid">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+                <!-- Hourly strip -->
+                <div class="hourly-section">
+                    <h3 class="section-title">Hourly</h3>
+                    <div class="hourly-strip" id="hourly-strip">
+                        <!-- Injected by JS -->
+                    </div>
+                </div>
+
+            </aside>
+        </div><!-- /.dashboard -->
+
+    </main>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
